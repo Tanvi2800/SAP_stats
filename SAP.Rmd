@@ -1,0 +1,300 @@
+---
+title: "a4"
+author: "Tanisha"
+date: '2023-06-13'
+output: html_document
+---
+---
+title: "Assignment_4"
+author: "Tanisha"
+output:
+  html_document:
+    df_print: paged
+  docx: default
+  word_document: default
+always_allow_html: yes
+runtime: shiny
+---
+
+## Solution 2
+
+#### part-A -computation of mean and standard deviation of birth weight
+
+For the hypothesis testing, a t-test (`t.test()`) or an analysis of variance (`aov()`) might be suitable, depending on the number of BMI obesity categories
+
+```{r}
+library(readxl)
+neonatal <- read_excel("neonatal.xlsx")
+library(gtsummary)
+# Create tbl_summary object
+table1 <- neonatal %>%
+  select(bmicat, birthweight, gestationalage, lga, hypoglycaemia, admission) %>%
+  tbl_summary(by = bmicat)
+
+# Print the table
+table1
+
+```
+
+```{r}
+library(ggplot2)
+# Create a boxplot of birthweight stratified by bmicat
+ggplot(neonatal, aes(x = factor(bmicat), y = birthweight)) +
+  geom_boxplot() +
+  labs(x = "BMI Category", y = "Birth Weight")
+
+```
+
+#### part B- calculation of median and 25th-75th percentile of gestational age
+
+`quantile()` function to calculate these statistics. For the hypothesis test, the Kruskal-Wallis test is used (`kruskal.test()`
+
+```{r}
+# Compute median and IQR
+median_gestationalage <- median(neonatal$gestationalage)
+iqr_gestationalage <- IQR(neonatal$gestationalage)
+
+cat("Median gestational age for the entire group of women: ", median_gestationalage, "\n")
+cat("Interquartile range for the entire group of women: ", iqr_gestationalage, "\n")
+
+# Compute median and IQR within BMI categories
+medians <- aggregate(gestationalage ~ bmicat, neonatal, median)
+iqrs <- aggregate(gestationalage ~ bmicat, neonatal, IQR)
+
+cat("Medians within each BMI obesity group:\n")
+print(medians)
+
+cat("Interquartile ranges within each BMI obesity group:\n")
+print(iqrs)
+
+# Kruskal-Wallis test for p-value
+kruskal_result <- kruskal.test(gestationalage ~ bmicat, data = neonatal)
+cat("Kruskal-Wallis test p-value: ", kruskal_result$p.value, "\n")
+
+```
+
+```{r}
+ggplot(neonatal, aes(x = factor(bmicat), y = gestationalage)) +
+  geom_boxplot() +
+  labs(x = "BMI Category", y = "Gestational Age")
+
+```
+
+#### Part c - Computation of the counts and percentages of each characteristic
+
+`table()` function to get counts and `prop.table()` to get proportions. For the hypothesis test, you might consider using a chi-squared test (`chisq.test()`).
+
+```{r}
+# Compute counts and proportions
+lga_counts <- table(neonatal$lga)
+lga_prop <- prop.table(lga_counts)
+
+cat("Counts of LGA for the entire group of women:\n")
+print(lga_counts)
+cat("\nProportions of LGA for the entire group of women:\n")
+print(lga_prop)
+
+# Compute counts and proportions within BMI categories
+lga_counts_bmi <- table(neonatal$bmicat, neonatal$lga)
+lga_prop_bmi <- prop.table(lga_counts_bmi, margin = 1)
+
+cat("\nCounts of LGA within each BMI obesity group:\n")
+print(lga_counts_bmi)
+cat("\nProportions of LGA within each BMI obesity group:\n")
+print(lga_prop_bmi)
+
+# Chi-squared test for p-value
+chisq_result <- chisq.test(lga_counts_bmi)
+
+cat("\nChi-squared test p-value: ", chisq_result$p.value, "\n")
+
+```
+
+```{r}
+library(ggplot2)
+ggplot(neonatal, aes(x = factor(bmicat))) +
+  geom_bar(aes(fill = factor(lga))) +
+  labs(x = "BMI Category", y = "Count", fill = "LGA")
+
+```
+
+## Solution 3
+
+#### Part A -Statistical Analysis Plan
+
+Here is a proposed Statistical Analysis Plan (SAP):
+
+1.  Visually inspect the data: Use histograms, scatter plots, and boxplots to visually explore the distribution of age, sleep length, and their relationship.
+
+2.  Calculate summary statistics: Use summary functions to calculate mean, median, mode, range, interquartile range, standard deviation, and variance for age and sleep length.
+
+3.  Compute the correlation coefficient: Use correlation function to measure the strength and direction of the relationship between age and sleep length.
+
+4.  Perform regression modeling: Develop a linear regression model to examine the relationship between age and sleep length, considering age as the independent variable and sleep length as the dependent variable.
+
+5.  Assess assumptions: Check the assumptions of linear regression - linearity, independence, homoscedasticity, and normality.
+
+6.  Determine model coefficients and p-values: Identify the coefficient for age, the intercept, and the significance of the coefficient (p-value).
+
+7.  Calculate the adjusted R-squared: Calculate the adjusted R-squared to measure the proportion of variance in sleep length that can be explained by age, taking into account the number of predictors in the model.
+
+    ```{r}
+    library(DiagrammeR)
+
+    grViz("
+      digraph {
+          
+          # Node definitions with labels and color attributes
+          node1 [label = '1. Visually inspect the data', fillcolor = 'black', style=filled, fontcolor = 'white']
+          node2 [label = '2. Calculate summary statistics', fillcolor = 'salmon', style=filled, fontcolor = 'black']
+          node3 [label = '3. Compute the correlation coefficient', fillcolor = 'black', style=filled, fontcolor = 'white']
+          node4 [label = '4. Perform regression modeling', fillcolor = 'salmon', style=filled, fontcolor = 'black']
+          node5 [label = '5. Assess assumptions', fillcolor = 'black', style=filled, fontcolor = 'white']
+          node6 [label = '6. Determine model coefficients and p-values', fillcolor = 'salmon', style=filled, fontcolor = 'black']
+          node7 [label = '7. Calculate the adjusted R-squared', fillcolor = 'black', style=filled, fontcolor = 'white']
+
+          # Edges/path
+          node1 -> node2
+          node2 -> node3
+          node3 -> node4
+          node4 -> node5
+          node5 -> node6
+          node6 -> node7
+      }
+    ")
+
+    ```
+
+#### Part -B-
+
+```{r}
+# Load the necessary library
+library(ggplot2)
+library(dplyr)
+library(readxl)
+# Load the data
+SAGE <- read_excel("SAGE.xlsx")
+
+# Visual inspection
+hist(SAGE$age)
+hist(SAGE$sleeplength)
+plot(SAGE$age, SAGE$sleeplength)
+
+# Calculate summary statistics
+summary(SAGE$age)
+summary(SAGE$sleeplength)
+
+# Compute correlation coefficient
+cor(SAGE$age, SAGE$sleeplength)
+
+# Perform regression modeling
+model <- lm(sleeplength ~ age, data = SAGE)
+
+# Assess assumptions
+par(mfrow=c(2,2))
+plot(model)
+
+# Determine model coefficients and p-values
+summary(model)
+
+# Calculate the adjusted R-squared
+summary(model)$adj.r.squared
+
+```
+
+Based on the output provided, you ran a simple linear regression with `sleeplength` as the dependent variable and `age` as the independent variable.
+
+The coefficients provided suggest that for each one-year increase in age, there is a 0.010542-hour increase in sleep length, on average. The p-value for the age coefficient is 0.0142, which is statistically significant at the 5% level, suggesting that age does have a significant effect on sleep length.
+
+However, the adjusted R-squared is quite small (around 0.0022), indicating that only about 0.22% of the variance in sleep length is explained by age in this model. This means that age alone doesn't strongly predict sleep length in your dataset.
+
+As always, the interpretation of these findings should be done with care. While age is significantly associated with sleep length based on your model, the effect is quite small and a lot of the variation in sleep length is unexplained by age alone. This suggests that other factors may also be influencing sleep length. Also, the data might not meet all the assumptions of linear regression, which should be checked.
+
+```{r}
+# load the broom package
+library(broom)
+
+# fit the linear model
+model <- lm(sleeplength ~ age, data = SAGE)
+
+# create a tidy data frame of the summary statistics
+tidy_summary <- tidy(model)
+
+# print the tidy data frame
+print(tidy_summary)
+
+```
+
+```{r}
+library(ggplot2)
+library(plotly)
+
+# generate the ggplot2 plot
+p <- ggplot(SAGE, aes(x = age, y = sleeplength)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "red") +
+  labs(x = "Age", y = "Sleep Length", 
+       title = "Relationship between Age and Sleep Length")
+
+# convert it to a plotly plot
+p_plotly <- ggplotly(p)
+
+# print the plot
+print(p_plotly)
+
+
+```
+
+
+
+
+
+
+
+
+#### part-3
+
+Based on the output from the linear regression model above, the estimated coefficient of age is positive (0.010542), suggesting that there is a positive relationship between age and sleep length in the sample. Specifically, for each additional year of age, sleep length increases by approximately 0.010542 hours, holding all else constant.
+
+However, it's important to note that this association is relatively weak. The p-value (0.0142) for the age coefficient is less than 0.05, indicating that the association is statistically significant at the 5% level. This means that it is unlikely that we would observe such an association by chance alone.
+
+Despite the statistical significance, the strength of the relationship between age and sleep length, as measured by the adjusted R-squared, is very low (approximately 0.002204). This indicates that only about 0.22% of the variability in sleep length can be explained by age. Therefore, while age may play a role in sleep length, there are likely other factors at play that have not been included in this model.
+
+The intercept is 6.424044, which represents the predicted sleep length for an individual of age zero in this model. However, given the context, the intercept does not have a meaningful interpretation because the age of zero does not apply to the sample.
+
+```{r}
+library(DiagrammeR)
+
+grViz("
+  digraph {
+      
+      # Node definitions with labels and color attributes
+      node1 [label = '1. Visually inspect the data', fillcolor = 'black', style=filled, fontcolor = 'white']
+      node2 [label = '2. Calculate summary statistics', fillcolor = 'salmon', style=filled, fontcolor = 'black']
+      node3 [label = '3. Compute the correlation coefficient', fillcolor = 'black', style=filled, fontcolor = 'white']
+      node4 [label = '4. Perform regression modeling', fillcolor = 'salmon', style=filled, fontcolor = 'black']
+      node5 [label = '5. Assess assumptions', fillcolor = 'black', style=filled, fontcolor = 'white']
+      node6 [label = '6. Determine model coefficients and p-values', fillcolor = 'salmon', style=filled, fontcolor = 'black']
+      node7 [label = '7. Calculate the adjusted R-squared', fillcolor = 'black', style=filled, fontcolor = 'white']
+      
+      # Result nodes
+      resultNode1 [label = 'Coefficients: Intercept = 6.42, Age = 0.01', fillcolor = 'lightblue', style=filled, fontcolor = 'black']
+      resultNode2 [label = 'Adjusted R-squared = 0.0022', fillcolor = 'lightblue', style=filled, fontcolor = 'black']
+      resultNode3 [label = 'p-value = 0.0142', fillcolor = 'lightblue', style=filled, fontcolor = 'black']
+
+      # Edges/path
+      node1 -> node2
+      node2 -> node3
+      node3 -> node4
+      node4 -> node5
+      node5 -> node6
+      node6 -> node7
+
+      # Paths to result nodes
+      node4 -> resultNode1
+      node6 -> resultNode2
+      node7 -> resultNode3
+  }
+")
+
+```
